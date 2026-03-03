@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Naivasha SEZ Plots - Mai Mahiu</title>
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+
+  <style>
+    body { margin: 0; }
+    #map { height: 100vh; }
+    #sezSelect {
+      position:absolute;
+      top:10px;
+      left:10px;
+      z-index:1000;
+      padding:5px;
+    }
+  </style>
+</head>
+
+<body>
+
+<select id="sezSelect">
+  <option value="">Select SEZ</option>
+</select>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+  var map = L.map('map').setView([-0.0236, 36.9062], 12);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  L.marker([-0.0236, 36.9062])
+    .addTo(map)
+    .bindPopup("<b>Mai Mahiu</b><br>Near Naivasha, Kenya");
+
+  function sezStyle(feature) {
+    return {
+      color: '#d7191c',
+      weight: 2,
+      fillOpacity: 0.5
+    };
+  }
+
+  function onEachFeature(feature, layer) {
+    var p = feature.properties;
+    layer.bindPopup(
+      `<b>Parcel No: ${p.Parcel_No || "N/A"}</b><br>
+       Size: ${p.Size || "N/A"}<br>
+       Status: ${p.Status || "N/A"}<br>
+       Investor: ${p.Investor || "N/A"}`
+    );
+  }
+
+  var sezLayer; // Make global so dropdown can access it
+
+  fetch('Naivasha_SEZ_Plots.geojson')
+    .then(response => response.json())
+    .then(data => {
+
+      sezLayer = L.geoJSON(data, {
+        style: sezStyle,
+        onEachFeature: onEachFeature
+      }).addTo(map);
+
+      map.fitBounds(sezLayer.getBounds());
+
+      // Populate dropdown AFTER data loads
+      var select = document.getElementById("sezSelect");
+
+      sezLayer.eachLayer(function(layer, i) {
+        var option = document.createElement("option");
+        option.value = i;
+        option.text = layer.feature.properties.Name || "Unnamed SEZ";
+        select.appendChild(option);
+      });
+
+      // Zoom to selected SEZ
+      select.addEventListener("change", function() {
+        var idx = this.value;
+        if (idx !== "") {
+          var layers = sezLayer.getLayers();
+          var chosenLayer = layers[idx];
+          map.fitBounds(chosenLayer.getBounds());
+          chosenLayer.openPopup();
+        }
+      });
+
+    })
+    .catch(error => console.error("Error loading GeoJSON:", error));
+
+</script>
+
+</body>
+</html>
+
