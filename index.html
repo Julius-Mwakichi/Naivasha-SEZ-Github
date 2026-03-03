@@ -19,6 +19,27 @@
       z-index:1000;
       padding:5px;
     }
+    #legend {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      background: white;
+      padding: 10px;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      z-index: 1000;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      margin: 5px 0;
+    }
+    .legend-color {
+      width: 20px;
+      height: 20px;
+      margin-right: 5px;
+      border: 1px solid #999;
+    }
   </style>
 </head>
 
@@ -27,6 +48,26 @@
 <select id="sezSelect">
   <option value="">Select SEZ</option>
 </select>
+
+<div id="legend">
+  <h4>Plot Status</h4>
+  <div class="legend-item">
+    <div class="legend-color" style="background: #dc3545;"></div>
+    <span>Allocated</span>
+  </div>
+  <div class="legend-item">
+    <div class="legend-color" style="background: #ffc107;"></div>
+    <span>Reserved</span>
+  </div>
+  <div class="legend-item">
+    <div class="legend-color" style="background: #28a745;"></div>
+    <span>Available</span>
+  </div>
+  <div class="legend-item">
+    <div class="legend-color" style="background: #6c757d;"></div>
+    <span>Other Status</span>
+  </div>
+</div>
 
 <div id="map"></div>
 
@@ -43,22 +84,67 @@
     .addTo(map)
     .bindPopup("<b>Mai Mahiu</b><br>Near Naivasha, Kenya");
 
+  // Function to determine color based on Status property
+  function getStatusColor(status) {
+    if (!status) return '#6c757d'; // Default gray for no status
+    
+    status = status.toLowerCase().trim();
+    
+    switch(status) {
+      case 'allocated':
+        return '#dc3545'; // Red
+      case 'reserved':
+        return '#ffc107'; // Yellow
+      case 'available':
+        return '#28a745'; // Green
+      default:
+        return '#6c757d'; // Gray for other statuses
+    }
+  }
+
   function sezStyle(feature) {
+    var status = feature.properties.Status;
+    var color = getStatusColor(status);
+    
     return {
-      color: '#d7191c',
-      weight: 2,
-      fillOpacity: 0.5
+      color: '#333', // Border color
+      weight: 1,
+      fillColor: color,
+      fillOpacity: 0.7,
+      opacity: 1
     };
   }
 
   function onEachFeature(feature, layer) {
     var p = feature.properties;
-    layer.bindPopup(
-      `<b>Parcel No: ${p.Parcel_No || "N/A"}</b><br>
-       Size: ${p.Size || "N/A"}<br>
-       Status: ${p.Status || "N/A"}<br>
-       Investor: ${p.Investor || "N/A"}`
-    );
+    
+    // Add hover effect
+    layer.on({
+      mouseover: function(e) {
+        var layer = e.target;
+        layer.setStyle({
+          weight: 3,
+          fillOpacity: 0.9
+        });
+        layer.bindTooltip(
+          `<b>Parcel No: ${p.Parcel_No || "N/A"}</b><br>
+           Status: ${p.Status || "N/A"}`
+        ).openTooltip();
+      },
+      mouseout: function(e) {
+        var layer = e.target;
+        sezLayer.resetStyle(layer);
+      },
+      click: function(e) {
+        var layer = e.target;
+        layer.bindPopup(
+          `<b>Parcel No: ${p.Parcel_No || "N/A"}</b><br>
+           Size: ${p.Size || "N/A"} acres<br>
+           Status: <strong style="color: ${getStatusColor(p.Status)}">${p.Status || "N/A"}</strong><br>
+           Investor: ${p.Investor || "Not Assigned"}`
+        ).openPopup();
+      }
+    });
   }
 
   var sezLayer; // Make global so dropdown can access it
