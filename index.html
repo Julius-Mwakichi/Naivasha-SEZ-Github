@@ -128,6 +128,7 @@
         });
         layer.bindTooltip(
           `<b>Parcel No: ${p.Parcel_No || "N/A"}</b><br>
+           <b>Unique ID: ${p.Unique_ID || "N/A"}</b><br>
            Status: ${p.Status || "N/A"}`
         ).openTooltip();
       },
@@ -139,6 +140,7 @@
         var layer = e.target;
         layer.bindPopup(
           `<b>Parcel No: ${p.Parcel_No || "N/A"}</b><br>
+           <b>Unique ID: ${p.Unique_ID || "N/A"}</b><br>
            Size: ${p.Size || "N/A"} acres<br>
            Status: <strong style="color: ${getStatusColor(p.Status)}">${p.Status || "N/A"}</strong><br>
            Investor: ${p.Investor || "Not Assigned"}`
@@ -149,8 +151,14 @@
 
   var sezLayer; // Make global so dropdown can access it
 
-  fetch(encodeURIComponent('NaivashaSEZPlots.geojson'))
-    .then(response => response.json())
+  // Fixed fetch - removed encodeURIComponent as it was incorrect
+  fetch('SEZ_NAIVASHA.geojson')
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    })
     .then(data => {
 
       sezLayer = L.geoJSON(data, {
@@ -182,10 +190,13 @@
       });
 
     })
-    .catch(error => console.error("Error loading GeoJSON:", error));
+    .catch(error => {
+      console.error("Error loading GeoJSON:", error);
+      // Show user-friendly error message
+      alert("Error loading GeoJSON file. Please check that 'SEZ_NAIVASHA.geojson' exists in the correct location.");
+    });
 
 </script>
 
 </body>
 </html>
-
