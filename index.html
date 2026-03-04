@@ -149,7 +149,7 @@
 
   var sezLayer; // Make global so dropdown can access it
 
-  fetch('Naivasha_SEZ.geojson')
+  fetch(encodeURIComponent('NaivashaSEZPlots.geojson'))
     .then(response => response.json())
     .then(data => {
 
